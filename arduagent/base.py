@@ -49,16 +49,16 @@ class ArduBase(Node):
 
     def initialize_publishers(self):
         buffer = 2
-        self.altitude_pub = self.create_publisher(Float32, self.declare_parameter("publishers.altitude.topic", "status/altitude").get_parameter_value().string_value, buffer)
-        self.heading_pub = self.create_publisher(Float32, self.declare_parameter("publishers.heading.topic", "status/heading").get_parameter_value().string_value, buffer)
-        self.gps_pub = self.create_publisher(NavSatFix, self.declare_parameter("publishers.gps.topic", "status/gps").get_parameter_value().string_value, buffer)
-        self.pose_pub = self.create_publisher(PoseStamped, self.declare_parameter("publishers.pose.topic", "status/pose").get_parameter_value().string_value, buffer)
-        self.path_pub = self.create_publisher(Path, self.declare_parameter("publishers.path.topic", "status/path").get_parameter_value().string_value, buffer)
-        self.battery0_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery0.topic", "status/battery0").get_parameter_value().string_value, buffer)
-        self.battery1_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery1.topic", "status/battery1").get_parameter_value().string_value, buffer)
-        self.temperature_pub = self.create_publisher(Float32, self.declare_parameter("publishers.temperature.topic", "status/temperature").get_parameter_value().string_value, buffer)
-        self.system_state_pub = self.create_publisher(String, self.declare_parameter("publishers.system_state.topic", "status/system_state").get_parameter_value().string_value, buffer)
-        self.flight_mode_pub = self.create_publisher(String, self.declare_parameter("publishers.flight_mode.topic", "status/flight_mode").get_parameter_value().string_value, buffer)
+        self.altitude_pub = self.create_publisher(Float32, self.declare_parameter("publishers.altitude", "status/altitude").get_parameter_value().string_value, buffer)
+        self.heading_pub = self.create_publisher(Float32, self.declare_parameter("publishers.heading", "status/heading").get_parameter_value().string_value, buffer)
+        self.gps_pub = self.create_publisher(NavSatFix, self.declare_parameter("publishers.gps", "status/gps").get_parameter_value().string_value, buffer)
+        self.pose_pub = self.create_publisher(PoseStamped, self.declare_parameter("publishers.pose", "status/pose").get_parameter_value().string_value, buffer)
+        self.path_pub = self.create_publisher(Path, self.declare_parameter("publishers.path", "status/path").get_parameter_value().string_value, buffer)
+        self.battery0_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery0", "status/battery0").get_parameter_value().string_value, buffer)
+        self.battery1_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery1", "status/battery1").get_parameter_value().string_value, buffer)
+        self.temperature_pub = self.create_publisher(Float32, self.declare_parameter("publishers.temperature", "status/temperature").get_parameter_value().string_value, buffer)
+        self.system_state_pub = self.create_publisher(String, self.declare_parameter("publishers.system_state", "status/system_state").get_parameter_value().string_value, buffer)
+        self.flight_mode_pub = self.create_publisher(String, self.declare_parameter("publishers.flight_mode", "status/flight_mode").get_parameter_value().string_value, buffer)
 
     def initialize_subscribers(self):
         # To be implemented in the derived classes
@@ -80,7 +80,7 @@ class ArduBase(Node):
                 self.master = mavutil.mavlink_connection(address)
                 if self.master.wait_heartbeat(timeout=1) is not None:
                     self.connected_address = address
-                    print("Connected to %s" % (self.connected_address))
+                    self.get_logger().info("Connected to %s" % (self.connected_address))
                     break
             except:
                 pass
