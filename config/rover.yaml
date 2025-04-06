@@ -1,0 +1,5 @@
+/**/rover:
+  ros__parameters:
+    subscribers:
+      steering: 'core/thrust_vector_cmd_horizontal'
+      throttle: 'core/thruster_cmd_float'
