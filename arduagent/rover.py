@@ -1,3 +1,4 @@
+import time
 import rclpy
 from .base import ArduBase
 from std_msgs.msg import String, Float32MultiArray, Float32
@@ -15,7 +16,9 @@ class Rover(ArduBase):
         # Initialize manual control timer
         self.manual_control_signal = ManualControl()
         self.manual_control_timer = self.create_timer(1/self.declare_parameter("manual_control.rate", 5.0).get_parameter_value().double_value, self.manual_control_callback)
-        self.last_manual_control_time = self.get_clock().now()
+        self.last_throttle_control_time, self.last_steering_control_time = self.get_clock().now(), self.get_clock().now()
+        self.throttle_timeout = self.declare_parameter("throttle.timeout", 1.0).get_parameter_value().double_value
+        self.steering_timeout = self.declare_parameter("steering.timeout", 1.0).get_parameter_value().double_value
 
     def initialize_subscribers(self):
         buffer = 2
@@ -35,10 +38,12 @@ class Rover(ArduBase):
         return super().manual_control(x=0, y=steering, z=throttle, r=0)
     
     def manual_control_callback(self):
+        # Check if the control signal is expired
         time_now = self.get_clock().now()
-        time_diff = (time_now - self.last_manual_control_time).nanoseconds / 1e9
-        if time_diff > 1.0:
-            self.manual_control_signal = ManualControl()
+        if time_now - self.last_throttle_control_time > self.throttle_timeout:
+            self.manual_control_signal.throttle = 0
+        if time_now - self.last_steering_control_time > self.steering_timeout:
+            self.manual_control_signal.steering = 0
 
         steering = int(self.manual_control_signal.steering * 1000)
         throttle = int(self.manual_control_signal.throttle * 1000)
@@ -46,11 +51,11 @@ class Rover(ArduBase):
 
     def steering_callback(self, msg):
         self.manual_control_signal.steering = msg.data
-        self.last_manual_control_time = self.get_clock().now()
+        self.last_throttle_control_time = self.get_clock().now()
         
     def throttle_callback(self, msg):
         self.manual_control_signal.throttle = msg.data
-        self.last_manual_control_time = self.get_clock().now()
+        self.last_throttle_control_time = self.get_clock().now()
 
 def main(args=None):
     rclpy.init(args=args)
