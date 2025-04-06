@@ -24,12 +24,12 @@ class Rover(ArduBase):
         buffer = 2
         self.steering_sub = self.create_subscription(
             Float32, 
-            self.declare_parameter("subscribers.steering.topic", "control/steering").get_parameter_value().string_value, 
+            self.declare_parameter("subscribers.steering", "control/steering").get_parameter_value().string_value, 
             self.steering_callback, buffer
         )
         self.throttle_sub = self.create_subscription(
             Float32, 
-            self.declare_parameter("subscribers.throttle.topic", "control/throttle").get_parameter_value().string_value, 
+            self.declare_parameter("subscribers.throttle", "control/throttle").get_parameter_value().string_value, 
             self.throttle_callback, buffer
         )
         # self.get_logger().info("Rover subscribers initialized")
@@ -40,9 +40,9 @@ class Rover(ArduBase):
     def manual_control_callback(self):
         # Check if the control signal is expired
         time_now = self.get_clock().now()
-        if time_now - self.last_throttle_control_time > self.throttle_timeout:
+        if (time_now - self.last_throttle_control_time).nanoseconds/1e9 > self.throttle_timeout:
             self.manual_control_signal.throttle = 0
-        if time_now - self.last_steering_control_time > self.steering_timeout:
+        if (time_now - self.last_steering_control_time).nanoseconds/1e9 > self.steering_timeout:
             self.manual_control_signal.steering = 0
 
         steering = int(self.manual_control_signal.steering * 1000)
@@ -51,7 +51,7 @@ class Rover(ArduBase):
 
     def steering_callback(self, msg):
         self.manual_control_signal.steering = msg.data
-        self.last_throttle_control_time = self.get_clock().now()
+        self.last_steering_control_time = self.get_clock().now()
         
     def throttle_callback(self, msg):
         self.manual_control_signal.throttle = msg.data
