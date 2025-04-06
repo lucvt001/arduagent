@@ -12,11 +12,7 @@ def generate_launch_description():
         executable='rover',
         package='arduagent',
         output='screen',
-        parameters=[config],
-        remappings=[
-            ('core/thruster_cmd_float', 'control/throttle'),
-            ('core/thrust_vector_cmd_horizontal', 'control/steering')
-        ]
+        parameters=[config]
     )
 
     return LaunchDescription([
