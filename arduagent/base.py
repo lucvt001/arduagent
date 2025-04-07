@@ -99,7 +99,11 @@ class ArduBase(Node):
 
         if update['mavpackettype'] == "GLOBAL_POSITION_INT":
             self.altitude = update['relative_alt'] / 1000     # Original unit is mm
+            self.gps_msg.latitude = update['lat'] / 1e7
+            self.gps_msg.longitude = update['lon'] / 1e7
+            self.gps_msg.altitude = update['alt'] / 1000
             self.is_altitude_updated = True
+            self.is_gps_updated = True
         elif update['mavpackettype'] == "ATTITUDE":
             attitude = [update['roll'], update['pitch'], update['yaw']]
             self.heading = degrees(update['yaw'])
@@ -151,6 +155,11 @@ class ArduBase(Node):
             self.publish_pose(self.local_position, self.orientation)
             self.publish_tf2(self.local_position, self.orientation)
             self.is_local_pose_updated = False
+
+        if self.is_gps_updated:
+            self.gps_msg.header.stamp = self.get_clock().now().to_msg()
+            self.gps_pub.publish(self.gps_msg)
+            self.is_gps_updated = False
 
         if self.is_battery0_updated:
             self.publish_battery_state(self.voltage0, self.current0, self.battery0_pub)
@@ -479,3 +488,5 @@ class ArduBase(Node):
         self.prev_armed_state = False
         self.path_msg = Path()
         self.path_msg.header.frame_id = "map"
+        self.gps_msg, self.is_gps_updated = NavSatFix(), False
+        self.gps_msg.header.frame_id = "world"
