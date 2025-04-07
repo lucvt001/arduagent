@@ -1,7 +1,7 @@
 import time
 import rclpy
 from .base import ArduBase
-from std_msgs.msg import String, Float32MultiArray, Float32
+from std_msgs.msg import Float32
 
 class ManualControl:
     def __init__(self, throttle=0, steering=0):
@@ -12,6 +12,9 @@ class Rover(ArduBase):
     
     def __init__(self):
         super().__init__()
+
+        self.arm()
+        self.set_mode('MANUAL')
 
         # Initialize manual control timer
         self.manual_control_signal = ManualControl()
