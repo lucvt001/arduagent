@@ -3,5 +3,5 @@
     path_pub_rate: 2.0    # Should be between 1.0 to 5.0 Hz
 
     subscribers:
-      steering: 'core/thrust_vector_cmd_horizontal'
-      throttle: 'core/thruster_cmd_float'
+      steering: 'control/steering'
+      throttle: 'control/throttle'
