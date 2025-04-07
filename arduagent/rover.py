@@ -12,6 +12,7 @@ class Rover(ArduBase):
     
     def __init__(self):
         super().__init__()
+        self.possible_modes = ['MANUAL', 'AUTO', 'GUIDED', 'LOITER', 'SIMPLE', 'RTL']
 
         self.arm()
         self.set_mode('MANUAL')

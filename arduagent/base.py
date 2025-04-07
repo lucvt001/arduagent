@@ -3,7 +3,7 @@ from pymavlink.quaternion import QuaternionBase
 import time
 from math import degrees
 from rclpy.node import Node
-from std_msgs.msg import String, Float32MultiArray, Float32
+from std_msgs.msg import String, Float32MultiArray, Float32, Bool
 from sensor_msgs.msg import BatteryState, NavSatFix
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import Path
@@ -39,26 +39,30 @@ class ArduBase(Node):
 
         # Initialize tf2 broadcaster
         self.tf2_broadcaster = TransformBroadcaster(self)
-        self.parent_frame = self.declare_parameter("parent_frame", "map")
-        self.child_frame = self.declare_parameter("child_frame", "vehicle/base_link")
+        self.parent_frame = self.declare_parameter("parent_frame", "map").get_parameter_value().string_value
+        self.child_frame = self.declare_parameter("child_frame", "vehicle/base_link").get_parameter_value().string_value
 
         # Initialize publishers and subscribers
         self.initialize_publishers()
         self.initialize_subscribers()
         self.initialize_services()
 
+        self.update_telem_timer = self.create_timer(1/self.declare_parameter("telem_update_rate", 200.0).get_parameter_value().double_value, self.update_vehicle_telem)
+        self.publish_telem_timer = self.create_timer(0.1, self.publish_telem)  # Fixed 10hz because whether the data is published depends on if it is updated; and the update rate of each message should be less than 10hz to keep traffic manageable
+        self.publish_path_timer = self.create_timer(1/self.declare_parameter("path_pub_rate", 2.0).get_parameter_value().double_value, self.publish_path)    # Path timer is separate because the frequency should be much lower
+
     def initialize_publishers(self):
         buffer = 2
-        self.altitude_pub = self.create_publisher(Float32, self.declare_parameter("publishers.altitude", "status/altitude").get_parameter_value().string_value, buffer)
-        self.heading_pub = self.create_publisher(Float32, self.declare_parameter("publishers.heading", "status/heading").get_parameter_value().string_value, buffer)
-        self.gps_pub = self.create_publisher(NavSatFix, self.declare_parameter("publishers.gps", "status/gps").get_parameter_value().string_value, buffer)
-        self.pose_pub = self.create_publisher(PoseStamped, self.declare_parameter("publishers.pose", "status/pose").get_parameter_value().string_value, buffer)
-        self.path_pub = self.create_publisher(Path, self.declare_parameter("publishers.path", "status/path").get_parameter_value().string_value, buffer)
-        self.battery0_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery0", "status/battery0").get_parameter_value().string_value, buffer)
-        self.battery1_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery1", "status/battery1").get_parameter_value().string_value, buffer)
-        self.temperature_pub = self.create_publisher(Float32, self.declare_parameter("publishers.temperature", "status/temperature").get_parameter_value().string_value, buffer)
-        self.system_state_pub = self.create_publisher(String, self.declare_parameter("publishers.system_state", "status/system_state").get_parameter_value().string_value, buffer)
-        self.flight_mode_pub = self.create_publisher(String, self.declare_parameter("publishers.flight_mode", "status/flight_mode").get_parameter_value().string_value, buffer)
+        self.altitude_pub = self.create_publisher(Float32, self.declare_parameter("publishers.altitude", "telem/altitude").get_parameter_value().string_value, buffer)
+        self.heading_pub = self.create_publisher(Float32, self.declare_parameter("publishers.heading", "telem/heading").get_parameter_value().string_value, buffer)
+        self.gps_pub = self.create_publisher(NavSatFix, self.declare_parameter("publishers.gps", "telem/gps").get_parameter_value().string_value, buffer)
+        self.pose_pub = self.create_publisher(PoseStamped, self.declare_parameter("publishers.pose", "telem/pose").get_parameter_value().string_value, buffer)
+        self.path_pub = self.create_publisher(Path, self.declare_parameter("publishers.path", "telem/path").get_parameter_value().string_value, buffer)
+        self.battery0_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery0", "telem/battery0").get_parameter_value().string_value, buffer)
+        self.battery1_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery1", "telem/battery1").get_parameter_value().string_value, buffer)
+        self.temperature_pub = self.create_publisher(Float32, self.declare_parameter("publishers.temperature", "telem/temperature").get_parameter_value().string_value, buffer)
+        self.system_state_pub = self.create_publisher(Bool, self.declare_parameter("publishers.system_state", "telem/is_armed").get_parameter_value().string_value, buffer)
+        self.flight_mode_pub = self.create_publisher(String, self.declare_parameter("publishers.flight_mode", "telem/flight_mode").get_parameter_value().string_value, buffer)
 
     def initialize_subscribers(self):
         # To be implemented in the derived classes
@@ -87,7 +91,7 @@ class ArduBase(Node):
         if self.connected_address is None:
             raise Exception("Could not connect to any of the addresses")
         
-    def update_vehicle_status(self):
+    def update_vehicle_telem(self):
         try:
             update = self.master.recv_match().to_dict()
         except:
@@ -127,38 +131,119 @@ class ArduBase(Node):
             self.is_servo_output_updated = True
         elif update["mavpackettype"] == "HEARTBEAT":
             mode = update['custom_mode']
-            state = update["system_status"]
+            mav_mode_flag = update["base_mode"]
             self.is_flight_mode_updated = True
             self.is_system_state_updated = True
             self.update_flight_mode(mode)
-            self.update_system_state(state)       
+            self.is_armed = bool(mav_mode_flag & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED) 
+
+    def publish_telem(self):
+
+        if self.is_altitude_updated:
+            self.altitude_pub.publish(Float32(data=self.altitude))
+            self.is_altitude_updated = False
+
+        if self.is_orientation_updated:
+            self.heading_pub.publish(Float32(data=self.heading))
+            self.is_orientation_updated = False
+
+        if self.is_local_pose_updated:
+            self.publish_pose(self.local_position, self.orientation)
+            self.publish_tf2(self.local_position, self.orientation)
+            self.is_local_pose_updated = False
+
+        if self.is_battery0_updated:
+            self.publish_battery_state(self.voltage0, self.current0, self.battery0_pub)
+            self.is_battery0_updated = False
+
+        if self.is_battery1_updated:
+            self.publish_battery_state(self.voltage1, self.current1, self.battery1_pub)
+            self.is_battery1_updated = False
+
+        if self.is_temperature_updated:
+            self.temperature_pub.publish(Float32(data=self.temperature))
+            self.is_temperature_updated = False
+
+        if self.is_system_state_updated:
+            self.system_state_pub.publish(Bool(data=self.is_armed))
+            self.is_system_state_updated = False
+            if self.is_armed != self.prev_armed_state:  # If there is a change in armed state
+                self.prev_armed_state = self.is_armed
+                self.path_msg.poses = []  # Clear path when armed state changes
+                if self.is_armed:
+                    self.get_logger().warn("Armed!")
+                else:
+                    self.get_logger().warn("Disarmed!")
+
+        if self.is_flight_mode_updated:
+            self.flight_mode_pub.publish(String(data=self.flight_mode))
+            self.is_flight_mode_updated = False
+
+    def publish_pose(self, position, orientation):
+        if position is None or orientation is None:
+            return
+        msg = PoseStamped()
+        time_now = self.get_clock().now().to_msg()
+        msg.header.stamp = time_now
+        msg.header.frame_id = "map"
+        msg.pose.position.x = position[0]
+        msg.pose.position.y = position[1]
+        msg.pose.position.z = position[2]
+        msg.pose.orientation.w = orientation[0]
+        msg.pose.orientation.x = orientation[1]
+        msg.pose.orientation.y = orientation[2]
+        msg.pose.orientation.z = orientation[3]
+        self.pose_pub.publish(msg)
+
+    def publish_path(self):
+        if self.local_position is None or self.orientation is None:
+            return
+        msg = PoseStamped()
+        time_now = self.get_clock().now().to_msg()
+        msg.header.stamp = time_now
+        msg.header.frame_id = "map"
+        msg.pose.position.x = self.local_position[0]
+        msg.pose.position.y = self.local_position[1]
+        msg.pose.position.z = self.local_position[2]
+        msg.pose.orientation.w = self.orientation[0]
+        msg.pose.orientation.x = self.orientation[1]
+        msg.pose.orientation.y = self.orientation[2]
+        msg.pose.orientation.z = self.orientation[3]
+        self.path_msg.poses.append(msg)
+        self.path_pub.publish(self.path_msg)
+
+    def publish_tf2(self, position, orientation):
+        if position is None or orientation is None:
+            return
+        msg = TransformStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = self.parent_frame
+        msg.child_frame_id = self.child_frame
+        msg.transform.translation.x = position[0]
+        msg.transform.translation.y = position[1]
+        msg.transform.translation.z = position[2]
+        msg.transform.rotation.w = orientation[0]
+        msg.transform.rotation.x = orientation[1]
+        msg.transform.rotation.y = orientation[2]
+        msg.transform.rotation.z = orientation[3]
+        self.tf2_broadcaster.sendTransform(msg)
+
+    def publish_battery_state(self, voltage, current, publisher):
+        msg = BatteryState()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.voltage = voltage
+        msg.current = - current     # Negative current means discharging
+        msg.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_DISCHARGING
+        msg.power_supply_health = BatteryState.POWER_SUPPLY_HEALTH_GOOD
+        msg.power_supply_technology = BatteryState.POWER_SUPPLY_TECHNOLOGY_LIPO
+        publisher.publish(msg)
 
     def update_flight_mode(self, mode):
         for m in self.possible_modes:
             if mode == self.master.mode_mapping()[m]:
                 self.flight_mode = m
                 return
-        self.flight_mode = "UNKNOWN"
-
-    def update_system_state(self, state):
-        if state == mavutil.mavlink.MAV_STATE_UNINIT:
-            self.system_state = "UNINIT"
-        elif state == mavutil.mavlink.MAV_STATE_BOOT:
-            self.system_state = "BOOT"
-        elif state == mavutil.mavlink.MAV_STATE_CALIBRATING:
-            self.system_state = "CALIBRATING"
-        elif state == mavutil.mavlink.MAV_STATE_STANDBY:
-            self.system_state = "STANDBY"
-            self.is_armed = False
-        elif state == mavutil.mavlink.MAV_STATE_ACTIVE:
-            self.system_state = "ACTIVE"
-            self.is_armed = True
-        elif state == mavutil.mavlink.MAV_STATE_CRITICAL:
-            self.system_state = "CRITICAL"
-        elif state == mavutil.mavlink.MAV_STATE_EMERGENCY:
-            self.system_state = "EMERGENCY"
-        elif state == mavutil.mavlink.MAV_STATE_POWEROFF:
-            self.system_state = "POWEROFF"       
+        self.flight_mode = "UNKNOWN"   
 
     def arming_callback(self, request, response):
         if request.data:
@@ -343,22 +428,42 @@ class ArduBase(Node):
         return False
     
     def configure_message_interval(self):
-        # self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, frequency_hz=20)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, frequency_hz=20)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_LOCAL_POSITION_NED, frequency_hz=20)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_BATTERY_STATUS, frequency_hz=10)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW, frequency_hz=10)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, frequency_hz=10)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, frequency_hz=5)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_LOCAL_POSITION_NED, frequency_hz=5)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_BATTERY_STATUS, frequency_hz=2)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW, frequency_hz=2)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, frequency_hz=5)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE, frequency_hz=1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT, frequency_hz=10)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT, frequency_hz=2)
 
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE2, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE3, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_VIBRATION, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_RANGEFINDER, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_DISTANCE_SENSOR, interval_us=-1)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_EKF_STATUS_REPORT, interval_us=-1)
+        msgs_to_ignore = [
+            mavutil.mavlink.MAVLINK_MSG_ID_AHRS,
+            mavutil.mavlink.MAVLINK_MSG_ID_AHRS2,
+            mavutil.mavlink.MAVLINK_MSG_ID_EKF_STATUS_REPORT,
+            mavutil.mavlink.MAVLINK_MSG_ID_GPS_RAW_INT,
+            mavutil.mavlink.MAVLINK_MSG_ID_MCU_STATUS,
+            mavutil.mavlink.MAVLINK_MSG_ID_MEMINFO,
+            mavutil.mavlink.MAVLINK_MSG_ID_MISSION_CURRENT,
+            mavutil.mavlink.MAVLINK_MSG_ID_NAMED_VALUE_FLOAT,
+            mavutil.mavlink.MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT,
+            mavutil.mavlink.MAVLINK_MSG_ID_POWER_STATUS,
+            mavutil.mavlink.MAVLINK_MSG_ID_RAW_IMU,
+            mavutil.mavlink.MAVLINK_MSG_ID_RC_CHANNELS,
+            mavutil.mavlink.MAVLINK_MSG_ID_RC_CHANNELS_SCALED,
+            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU, 
+            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2,
+            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU3,
+            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE2,
+            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE3,
+            mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME,
+            mavutil.mavlink.MAVLINK_MSG_ID_SYS_STATUS,
+            mavutil.mavlink.MAVLINK_MSG_ID_TIMESYNC,
+            mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD,
+            mavutil.mavlink.MAVLINK_MSG_ID_VIBRATION,
+        ]
+
+        for msg_id in msgs_to_ignore:
+            self.request_message_interval(msg_id, interval_us=-1)
 
     def initialize_class_variables(self):
         self.possible_modes = ["MANUAL"]
@@ -371,3 +476,6 @@ class ArduBase(Node):
         self.is_armed, self.system_state, self.is_system_state_updated = False, None, False
         self.flight_mode, self.is_flight_mode_updated = None, False
         self.servo_output_raw, self.is_servo_output_updated = None, False
+        self.prev_armed_state = False
+        self.path_msg = Path()
+        self.path_msg.header.frame_id = "map"
