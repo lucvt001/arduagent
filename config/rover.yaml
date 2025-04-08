@@ -1,6 +1,9 @@
 /**/rover:
   ros__parameters:
-    possible_addresses: ['udpin:172.17.0.1:14550']
+    possible_addresses:
+      - 'udpin:172.17.0.1:14550'
+      - 'udpin:localhost:14550'
+      - '/dev/serial0'
 
     subscribers:
       steering: 'control/steering'
