@@ -1,7 +1,12 @@
 /**/rover:
   ros__parameters:
-    path_pub_rate: 2.0    # Should be between 1.0 to 5.0 Hz
+    possible_addresses: ['udpin:172.17.0.1:14550']
 
     subscribers:
       steering: 'control/steering'
       throttle: 'control/throttle'
+
+    publishers:
+      gps: 'core/gps'
+
+    path_pub_rate: 2.0    # Should be between 1.0 to 5.0 Hz
