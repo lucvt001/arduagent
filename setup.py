@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'rover = arduagent.rover:main',
+            'origin_pub = arduagent.origin_pub:main',
         ],
     },
 )
