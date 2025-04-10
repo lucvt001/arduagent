@@ -1,12 +1,11 @@
 import os
 from ament_index_python.packages import get_package_share_directory
-from arduagent import origin_pub
 from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import FrontendLaunchDescriptionSource
 
-is_leader = True
+is_leader = False
 
 def generate_launch_description():
 

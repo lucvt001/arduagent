@@ -9,6 +9,7 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import Path
 from std_srvs.srv import Trigger, SetBool
 from tf2_ros import TransformBroadcaster
+import sys
 
 class ArduBase(Node):
     
@@ -89,7 +90,9 @@ class ArduBase(Node):
             except:
                 pass
         if self.connected_address is None:
-            raise Exception("Could not connect to any of the addresses")
+            self.get_logger().error("Failed to connect to any address in %s" % (possible_addresses))
+            self.destroy_node()
+            sys.exit()
         
     def update_vehicle_telem(self):
         try:
