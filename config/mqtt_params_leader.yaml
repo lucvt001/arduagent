@@ -17,6 +17,7 @@
           - 'core/temperature'
           - 'core/is_armed'
           - 'core/flight_mode'
+          - '/origin_gps'
         core/gps:
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/position'
         core/heading:
@@ -29,3 +30,5 @@
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/is_armed'
         core/flight_mode:
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/flight_mode'
+        /origin_gps:
+          mqtt_topic: 'waraps/unit/surface/real/origin_gps'
