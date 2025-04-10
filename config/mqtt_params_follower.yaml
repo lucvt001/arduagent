@@ -1,0 +1,39 @@
+/**/mqtt_client:
+  ros__parameters:
+    broker:
+      host: '1a9ad048190548b89a225a4175e78661.s1.eu.hivemq.cloud'
+      port: 8883
+      user: 'raspi_usv2'
+      pass: 'Raspi_usv2'
+      tls:
+        enabled: true
+
+    bridge:
+      mqtt2ros:
+        mqtt_topics: 
+          - 'waraps/unit/surface/real/MiniUSV1/sensor/position'
+          - 'waraps/unit/surface/real/MiniUSV1/sensor/heading'
+        waraps/unit/surface/real/MiniUSV1/sensor/position:
+          ros_topic: '/agent0/core/gps'
+        waraps/unit/surface/real/MiniUSV1/sensor/heading:
+          ros_topic: '/agent0/core/heading'
+      ros2mqtt:
+        ros_topics:
+          - 'core/gps'
+          - 'core/heading'
+          - 'core/battery0'
+          - 'core/temperature'
+          - 'core/is_armed'
+          - 'core/flight_mode'
+        core/gps:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/position'
+        core/heading:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/heading'
+        core/battery0:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/battery0'
+        core/temperature:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/temperature'
+        core/is_armed:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/is_armed'
+        core/flight_mode:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/flight_mode'
