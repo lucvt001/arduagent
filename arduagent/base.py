@@ -49,7 +49,7 @@ class ArduBase(Node):
 
         self.update_telem_timer = self.create_timer(1/self.declare_parameter("telem_update_rate", 200.0).get_parameter_value().double_value, self.update_vehicle_telem)
         self.publish_telem_timer = self.create_timer(0.1, self.publish_telem)  # Fixed 10hz because whether the data is published depends on if it is updated; and the update rate of each message should be less than 10hz to keep traffic manageable
-        self.publish_path_timer = self.create_timer(1/self.declare_parameter("path_pub_rate", 2.0).get_parameter_value().double_value, self.publish_path)    # Path timer is separate because the frequency should be much lower
+        # self.publish_path_timer = self.create_timer(1/self.declare_parameter("path_pub_rate", 2.0).get_parameter_value().double_value, self.publish_path)    # Path timer is separate because the frequency should be much lower
 
     def initialize_publishers(self):
         buffer = 2
