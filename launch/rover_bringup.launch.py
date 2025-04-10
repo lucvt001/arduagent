@@ -34,7 +34,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'input_topic': 'core/gps',
-            'output_topic': '/origin_gps'
+            'output_topic': 'origin_gps'
         }]
     )
 

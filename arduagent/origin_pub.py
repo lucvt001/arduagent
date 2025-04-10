@@ -9,7 +9,7 @@ class OriginGPSPublisher(Node):
 
         # Get parameters
         input_topic = self.declare_parameter('input_topic', 'core/gps').get_parameter_value().string_value
-        output_topic = self.declare_parameter('output_topic', '/origin_gps').get_parameter_value().string_value
+        output_topic = self.declare_parameter('output_topic', 'origin_gps').get_parameter_value().string_value
 
         # Initialize variables
         self.origin_gps = None
