@@ -24,19 +24,22 @@ class OriginGPSPublisher(Node):
         self.timer = self.create_timer(2.0, self.timer_callback)
 
     def gps_callback(self, msg: NavSatFix):
-        # Keep the first message received as the origin GPS
-        if self.origin_gps is None:
-            self.origin_gps = msg
-            self.get_logger().info(f"Origin GPS set: [lat: {msg.latitude}, lon: {msg.longitude}, alt: {msg.altitude}]")
-        else:
-            self.get_logger().warn("Received additional GPS message, but ignoring as origin is already set.")
+        # Do nothing if the origin GPS has already been set
+        if self.origin_gps is not None:
+            return
+        
+        # Check if the GPS data is valid
+        lat, lon = msg.latitude, msg.longitude
+        if abs(lat) < 1e-5 and abs(lon) < 1e-5:
+            return
+        
+        self.origin_gps = msg
+        self.get_logger().info(f"Origin GPS set: [lat: {msg.latitude}, lon: {msg.longitude}, alt: {msg.altitude}]")
 
     def timer_callback(self):
         # Publish the origin GPS if it has been set
         if self.origin_gps is not None:
             self.gps_pub.publish(self.origin_gps)
-        else:
-            self.get_logger().warning("Origin GPS not set yet. Waiting for the first GPS message...")
 
 
 def main(args=None):
