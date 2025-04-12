@@ -2,14 +2,17 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import IncludeLaunchDescription, TimerAction, DeclareLaunchArgument
 from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.conditions import IfCondition, UnlessCondition
 
-is_leader = False
+launch_args = [
+    DeclareLaunchArgument('is_leader', default_value='True', description='True will run origin_pub together with leader mqtt params, False otherwise.'),
+]
 
 def generate_launch_description():
 
-    param_file_name = 'mqtt_params_leader.yaml' if is_leader else 'mqtt_params_follower.yaml'
     config = os.path.join(get_package_share_directory('arduagent'), 'config', 'rover.yaml')
 
     rover_node = Node(
@@ -20,10 +23,18 @@ def generate_launch_description():
         parameters=[config]
     )
 
-    mqtt_client = IncludeLaunchDescription(
+    mqtt_client_leader = IncludeLaunchDescription(
         FrontendLaunchDescriptionSource(
             os.path.join(get_package_share_directory('mqtt_client'), 'launch', 'standalone.launch.ros2.xml')
-        ), launch_arguments={'params_file': os.path.join(get_package_share_directory('arduagent'), 'config', param_file_name)}.items()
+        ), condition=IfCondition(PythonExpression([LaunchConfiguration('is_leader')])),
+        launch_arguments={'params_file': os.path.join(get_package_share_directory('arduagent'), 'config', 'mqtt_params_leader.yaml')}.items()
+    )
+
+    mqtt_client_follower = IncludeLaunchDescription(
+        FrontendLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('mqtt_client'), 'launch', 'standalone.launch.ros2.xml')
+        ), condition=UnlessCondition(PythonExpression([LaunchConfiguration('is_leader')])),
+        launch_arguments={'params_file': os.path.join(get_package_share_directory('arduagent'), 'config', 'mqtt_params_follower.yaml')}.items()
     )
 
     # Specifically for the leader to publish the origin GPS for all agents to calculate their local positions
@@ -35,15 +46,12 @@ def generate_launch_description():
         parameters=[{
             'input_topic': 'core/gps',
             'output_topic': 'origin_gps'
-        }]
+        }], condition=IfCondition(PythonExpression([LaunchConfiguration('is_leader')])),
     )
 
-    ld = LaunchDescription([
+    return LaunchDescription([
+        *launch_args,
         rover_node,
-        TimerAction(period=2.0, actions=[mqtt_client]),
+        origin_pub,
+        TimerAction(period=2.0, actions=[mqtt_client_leader, mqtt_client_follower]),
     ])
-
-    if is_leader:
-        ld.add_action(origin_pub)
-
-    return ld
