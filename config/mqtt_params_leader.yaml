@@ -1,7 +1,7 @@
 /**/mqtt_client:
   ros__parameters:
     broker:
-      host: '1a9ad048190548b89a225a4175e78661.s1.eu.hivemq.cloud'
+      host: 'v59d1bdd.ala.eu-central-1.emqxsl.com'
       port: 8883
       user: 'raspi_usv1'
       pass: 'Raspi_usv1'
