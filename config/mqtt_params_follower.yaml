@@ -28,6 +28,8 @@
           - 'core/temperature'
           - 'core/is_armed'
           - 'core/flight_mode'
+          - 'control/throttle'
+          - 'control/steering'
         core/gps:
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/position'
         core/heading:
@@ -40,3 +42,7 @@
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/is_armed'
         core/flight_mode:
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/flight_mode'
+        control/throttle:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/control/throttle'
+        control/steering:
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/control/steering'
