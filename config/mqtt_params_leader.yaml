@@ -19,7 +19,7 @@
           - 'core/flight_mode'
           - 'origin_gps'
         core/gps:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/position'
+          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/gps'
         core/heading:
           mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/heading'
         core/battery0:
