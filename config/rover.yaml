@@ -12,6 +12,7 @@
     publishers:
       gps: 'core/gps'
       heading: 'core/heading'
+      imu: 'core/imu'
       battery0: 'core/battery0'
       temperature: 'core/temperature'
       system_state: 'core/is_armed'

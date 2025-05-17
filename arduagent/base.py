@@ -4,7 +4,7 @@ import time
 from math import degrees
 from rclpy.node import Node
 from std_msgs.msg import String, Float32MultiArray, Float32, Bool
-from sensor_msgs.msg import BatteryState, NavSatFix
+from sensor_msgs.msg import BatteryState, NavSatFix, Imu
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import Path
 from std_srvs.srv import Trigger, SetBool
@@ -49,7 +49,7 @@ class ArduBase(Node):
         self.initialize_services()
 
         self.update_telem_timer = self.create_timer(1/self.declare_parameter("telem_update_rate", 200.0).get_parameter_value().double_value, self.update_vehicle_telem)
-        self.publish_telem_timer = self.create_timer(0.1, self.publish_telem)  # Fixed 10hz because whether the data is published depends on if it is updated; and the update rate of each message should be less than 10hz to keep traffic manageable
+        self.publish_telem_timer = self.create_timer(1/20.0, self.publish_telem)  # Fixed 20hz because whether the data is published depends on if it is updated; and the update rate of each message should be less than 10hz to keep traffic manageable
         # self.publish_path_timer = self.create_timer(1/self.declare_parameter("path_pub_rate", 2.0).get_parameter_value().double_value, self.publish_path)    # Path timer is separate because the frequency should be much lower
 
     def initialize_publishers(self):
@@ -57,6 +57,7 @@ class ArduBase(Node):
         # self.altitude_pub = self.create_publisher(Float32, self.declare_parameter("publishers.altitude", "telem/altitude").get_parameter_value().string_value, buffer)
         self.heading_pub = self.create_publisher(Float32, self.declare_parameter("publishers.heading", "telem/heading").get_parameter_value().string_value, buffer)
         self.gps_pub = self.create_publisher(NavSatFix, self.declare_parameter("publishers.gps", "telem/gps").get_parameter_value().string_value, buffer)
+        self.imu_pub = self.create_publisher(Imu, self.declare_parameter("publishers.imu", "telem/imu").get_parameter_value().string_value, buffer)
         # self.pose_pub = self.create_publisher(PoseStamped, self.declare_parameter("publishers.pose", "telem/pose").get_parameter_value().string_value, buffer)
         # self.path_pub = self.create_publisher(Path, self.declare_parameter("publishers.path", "telem/path").get_parameter_value().string_value, buffer)
         self.battery0_pub = self.create_publisher(BatteryState, self.declare_parameter("publishers.battery0", "telem/battery0").get_parameter_value().string_value, buffer)
@@ -120,6 +121,15 @@ class ArduBase(Node):
             self.local_position = [update['x'], -update['y'], -update['z']]     # Minus sign convert from NED to FLU frame
             self.local_velocity = [update['vx'], -update['vy'], -update['vz']]
             self.is_local_pose_updated = True
+        elif update["mavpackettype"] == "HIGHRES_IMU":
+            # Convert from NED to FLU frame
+            self.imu_msg.linear_acceleration.x = update['xacc']
+            self.imu_msg.linear_acceleration.y = - update['yacc']
+            self.imu_msg.linear_acceleration.z = - (update['zacc'] + 9.81)  # Eliminate gravity
+            self.imu_msg.angular_velocity.x = update['xgyro']
+            self.imu_msg.angular_velocity.y = - update['ygyro']
+            self.imu_msg.angular_velocity.z = - update['zgyro']
+            self.is_imu_updated = True
         elif update["mavpackettype"] == "BATTERY_STATUS":
             if update['id'] == 0:
                 self.voltage0 = update['voltages'][0] / 1000     # Original unit is mV
@@ -163,6 +173,11 @@ class ArduBase(Node):
             self.gps_msg.header.stamp = self.get_clock().now().to_msg()
             self.gps_pub.publish(self.gps_msg)
             self.is_gps_updated = False
+
+        if self.is_imu_updated:
+            self.imu_msg.header.stamp = self.get_clock().now().to_msg()
+            self.imu_pub.publish(self.imu_msg)
+            self.is_imu_updated = False
 
         if self.is_battery0_updated:
             self.publish_battery_state(self.voltage0, self.current0, self.battery0_pub)
@@ -447,6 +462,7 @@ class ArduBase(Node):
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, frequency_hz=5)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE, frequency_hz=1)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT, frequency_hz=2)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HIGHRES_IMU, frequency_hz=10)
 
         msgs_to_ignore = [
             mavutil.mavlink.MAVLINK_MSG_ID_AHRS,
@@ -493,3 +509,4 @@ class ArduBase(Node):
         self.path_msg.header.frame_id = "map"
         self.gps_msg, self.is_gps_updated = NavSatFix(), False
         self.gps_msg.header.frame_id = "world"
+        self.imu_msg, self.is_imu_updated = Imu(), False
