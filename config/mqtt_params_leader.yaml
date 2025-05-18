@@ -19,16 +19,16 @@
           - 'core/flight_mode'
           - 'origin_gps'
         core/gps:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/gps'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/gps'
         core/heading:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/heading'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/heading'
         core/battery0:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/battery0'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/battery0'
         core/temperature:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/temperature'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/temperature'
         core/is_armed:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/is_armed'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/is_armed'
         core/flight_mode:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV1/sensor/flight_mode'
+          mqtt_topic: 'mqtt_client/MiniUSV1/sensor/flight_mode'
         origin_gps:
-          mqtt_topic: 'waraps/unit/surface/real/origin_gps'
+          mqtt_topic: 'mqtt_client/origin_gps'

@@ -11,14 +11,14 @@
     bridge:
       mqtt2ros:
         mqtt_topics: 
-          - 'waraps/unit/surface/real/MiniUSV1/sensor/gps'
-          - 'waraps/unit/surface/real/MiniUSV1/sensor/heading'
-          - 'waraps/unit/surface/real/origin_gps'
-        waraps/unit/surface/real/MiniUSV1/sensor/gps:
+          - 'mqtt_client/MiniUSV1/sensor/gps'
+          - 'mqtt_client/MiniUSV1/sensor/heading'
+          - 'mqtt_client/origin_gps'
+        mqtt_client/MiniUSV1/sensor/gps:
           ros_topic: 'leader1/core/gps'
-        waraps/unit/surface/real/MiniUSV1/sensor/heading:
+        mqtt_client/MiniUSV1/sensor/heading:
           ros_topic: 'leader1/core/heading'
-        waraps/unit/surface/real/origin_gps:
+        mqtt_client/origin_gps:
           ros_topic: 'origin_gps'
       ros2mqtt:
         ros_topics:
@@ -31,18 +31,18 @@
           - 'control/throttle'
           - 'control/steering'
         core/gps:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/gps'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/gps'
         core/heading:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/heading'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/heading'
         core/battery0:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/battery0'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/battery0'
         core/temperature:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/temperature'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/temperature'
         core/is_armed:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/is_armed'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/is_armed'
         core/flight_mode:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/sensor/flight_mode'
+          mqtt_topic: 'mqtt_client/MiniUSV2/sensor/flight_mode'
         control/throttle:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/control/throttle'
+          mqtt_topic: 'mqtt_client/MiniUSV2/control/throttle'
         control/steering:
-          mqtt_topic: 'waraps/unit/surface/real/MiniUSV2/control/steering'
+          mqtt_topic: 'mqtt_client/MiniUSV2/control/steering'
