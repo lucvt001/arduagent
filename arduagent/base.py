@@ -84,7 +84,7 @@ class ArduBase(Node):
             try:
                 self.get_logger().info("Trying %s" % (address))
                 self.master = mavutil.mavlink_connection(address)
-                if self.master.wait_heartbeat(timeout=1) is not None:
+                if self.master.wait_heartbeat(timeout=5) is not None:
                     self.connected_address = address
                     self.get_logger().info("Connected to %s" % (self.connected_address))
                     break
