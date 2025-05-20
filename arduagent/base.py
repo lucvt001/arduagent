@@ -121,14 +121,14 @@ class ArduBase(Node):
             self.local_position = [update['x'], -update['y'], -update['z']]     # Minus sign convert from NED to FLU frame
             self.local_velocity = [update['vx'], -update['vy'], -update['vz']]
             self.is_local_pose_updated = True
-        elif update["mavpackettype"] == "HIGHRES_IMU":
+        elif update["mavpackettype"] == "SCALED_IMU2":
             # Convert from NED to FLU frame
-            self.imu_msg.linear_acceleration.x = update['xacc']
-            self.imu_msg.linear_acceleration.y = - update['yacc']
-            self.imu_msg.linear_acceleration.z = - (update['zacc'] + 9.81)  # Eliminate gravity
-            self.imu_msg.angular_velocity.x = update['xgyro']
-            self.imu_msg.angular_velocity.y = - update['ygyro']
-            self.imu_msg.angular_velocity.z = - update['zgyro']
+            self.imu_msg.linear_acceleration.x = update['xacc']/1000*9.81
+            self.imu_msg.linear_acceleration.y = -update['yacc']/1000*9.81
+            self.imu_msg.linear_acceleration.z = -update['zacc']/1000*9.81-9.81  # Eliminate gravity
+            self.imu_msg.angular_velocity.x = update['xgyro']/1000
+            self.imu_msg.angular_velocity.y = - update['ygyro']/1000
+            self.imu_msg.angular_velocity.z = - update['zgyro']/1000
             self.is_imu_updated = True
         elif update["mavpackettype"] == "BATTERY_STATUS":
             if update['id'] == 0:
@@ -462,7 +462,7 @@ class ArduBase(Node):
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, frequency_hz=5)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE, frequency_hz=1)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT, frequency_hz=2)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HIGHRES_IMU, frequency_hz=10)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2, frequency_hz=5)
 
         msgs_to_ignore = [
             mavutil.mavlink.MAVLINK_MSG_ID_AHRS,
