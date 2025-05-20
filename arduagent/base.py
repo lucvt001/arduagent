@@ -10,6 +10,11 @@ from nav_msgs.msg import Path
 from std_srvs.srv import Trigger, SetBool
 from tf2_ros import TransformBroadcaster
 import sys
+import numpy as np
+from scipy.spatial.transform import Rotation as R
+
+mG = 9.80665 / 1000.0  # m/s^2
+g_world = np.array([0, 0, 9.81])
 
 class ArduBase(Node):
     
@@ -123,9 +128,17 @@ class ArduBase(Node):
             self.is_local_pose_updated = True
         elif update["mavpackettype"] == "SCALED_IMU2":
             # Convert from NED to FLU frame
-            self.imu_msg.linear_acceleration.x = update['xacc']/1000*9.81
-            self.imu_msg.linear_acceleration.y = -update['yacc']/1000*9.81
-            self.imu_msg.linear_acceleration.z = -update['zacc']/1000*9.81-9.81  # Eliminate gravity
+            x_acc = update['xacc']*mG
+            y_acc = - update['yacc']*mG
+            z_acc = - update['zacc']*mG
+            acc_with_gravity = np.array([x_acc, y_acc, z_acc])
+            r = R.from_quat(self.orientation, scalar_first=True)
+            g_body = r.inv().apply(g_world)
+            acc = acc_with_gravity - g_body
+
+            self.imu_msg.linear_acceleration.x = acc[0]
+            self.imu_msg.linear_acceleration.y = acc[1]
+            self.imu_msg.linear_acceleration.z = acc[2]
             self.imu_msg.angular_velocity.x = update['xgyro']/1000
             self.imu_msg.angular_velocity.y = - update['ygyro']/1000
             self.imu_msg.angular_velocity.z = - update['zgyro']/1000
@@ -462,7 +475,7 @@ class ArduBase(Node):
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, frequency_hz=5)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE, frequency_hz=1)
         self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT, frequency_hz=2)
-        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2, frequency_hz=5)
+        self.request_message_interval(mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2, frequency_hz=10)
 
         msgs_to_ignore = [
             mavutil.mavlink.MAVLINK_MSG_ID_AHRS,
@@ -479,7 +492,7 @@ class ArduBase(Node):
             mavutil.mavlink.MAVLINK_MSG_ID_RC_CHANNELS,
             mavutil.mavlink.MAVLINK_MSG_ID_RC_CHANNELS_SCALED,
             mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU, 
-            mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2,
+            # mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU2,
             mavutil.mavlink.MAVLINK_MSG_ID_SCALED_IMU3,
             mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE2,
             mavutil.mavlink.MAVLINK_MSG_ID_SCALED_PRESSURE3,
