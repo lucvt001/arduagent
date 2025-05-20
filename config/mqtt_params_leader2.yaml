@@ -1,0 +1,48 @@
+/**/mqtt_client:
+  ros__parameters:
+    broker:
+      host: '6568851381634f73af5c5631e79edcce.s1.eu.hivemq.cloud'
+      port: 8883
+      user: 'leader2'
+      pass: 'Leader2__'
+      tls:
+        enabled: true
+
+    bridge:
+      mqtt2ros:
+        mqtt_topics: 
+          - 'mqtt_client/leader1/sensor/gps'
+          - 'mqtt_client/leader1/sensor/heading'
+          - 'mqtt_client/origin_gps'
+        mqtt_client/leader1/sensor/gps:
+          ros_topic: 'leader1/core/gps'
+        mqtt_client/leader1/sensor/heading:
+          ros_topic: 'leader1/core/heading'
+        mqtt_client/origin_gps:
+          ros_topic: 'origin_gps'
+      ros2mqtt:
+        ros_topics:
+          - 'core/gps'
+          - 'core/heading'
+          - 'core/battery0'
+          - 'core/temperature'
+          - 'core/is_armed'
+          - 'core/flight_mode'
+          - 'control/throttle'
+          - 'control/steering'
+        core/gps:
+          mqtt_topic: 'mqtt_client/leader2/sensor/gps'
+        core/heading:
+          mqtt_topic: 'mqtt_client/leader2/sensor/heading'
+        core/battery0:
+          mqtt_topic: 'mqtt_client/leader2/sensor/battery0'
+        core/temperature:
+          mqtt_topic: 'mqtt_client/leader2/sensor/temperature'
+        core/is_armed:
+          mqtt_topic: 'mqtt_client/leader2/sensor/is_armed'
+        core/flight_mode:
+          mqtt_topic: 'mqtt_client/leader2/sensor/flight_mode'
+        control/throttle:
+          mqtt_topic: 'mqtt_client/leader2/control/throttle'
+        control/steering:
+          mqtt_topic: 'mqtt_client/leader2/control/steering'

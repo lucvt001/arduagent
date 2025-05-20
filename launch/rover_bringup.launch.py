@@ -10,6 +10,8 @@ from launch.conditions import IfCondition, UnlessCondition
 launch_args = [
     DeclareLaunchArgument('ns', description='Namespace for the agent.'),
     DeclareLaunchArgument('is_leader', description='True will run origin_pub together with leader mqtt params, False otherwise.'),
+    DeclareLaunchArgument('mqtt_params_file', default_value='/home/smarc2user/colcon_ws/src/tuper/arduagent/config/mqtt_params_leader1.yaml',
+                         description='Path to the MQTT parameters file.'),
 ]
 
 def generate_launch_description():
@@ -18,6 +20,7 @@ def generate_launch_description():
 
     ns = LaunchConfiguration('ns')
     is_leader = LaunchConfiguration('is_leader')
+    mqtt_params_file = LaunchConfiguration('mqtt_params_file')
 
     rover_node = Node(
         name='rover',
@@ -32,14 +35,14 @@ def generate_launch_description():
         FrontendLaunchDescriptionSource(
             os.path.join(get_package_share_directory('mqtt_client'), 'launch', 'standalone.launch.ros2.xml')
         ), condition=IfCondition(PythonExpression([is_leader])),
-        launch_arguments={'params_file': os.path.join(get_package_share_directory('arduagent'), 'config', 'mqtt_params_leader.yaml')}.items()
+        launch_arguments={'params_file': mqtt_params_file}.items()
     )
 
     mqtt_client_follower = IncludeLaunchDescription(
         FrontendLaunchDescriptionSource(
             os.path.join(get_package_share_directory('mqtt_client'), 'launch', 'standalone.launch.ros2.xml')
         ), condition=UnlessCondition(PythonExpression([is_leader])),
-        launch_arguments={'params_file': os.path.join(get_package_share_directory('arduagent'), 'config', 'mqtt_params_follower.yaml')}.items()
+        launch_arguments={'params_file': mqtt_params_file}.items()
     )
 
     mqtt_with_ns = GroupAction([
@@ -62,6 +65,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        *launch_args,
         rover_node,
         origin_pub,
         TimerAction(period=2.0, actions=[mqtt_with_ns]),

@@ -3,8 +3,8 @@
     broker:
       host: '6568851381634f73af5c5631e79edcce.s1.eu.hivemq.cloud'
       port: 8883
-      user: 'follower'
-      pass: 'Follower0__'
+      user: 'follower11'
+      pass: 'Follower11__'
       tls:
         enabled: true
 
@@ -30,31 +30,34 @@
           - 'core/flight_mode'
           - 'control/throttle'
           - 'control/steering'
+          - 'ukf/state'
           - 'ukf/offset_position_x'
           - 'ukf/offset_position_y'
           - 'gps/offset_position_x'
           - 'gps/offset_position_y'
         core/gps:
-          mqtt_topic: 'mqtt_client/follower/sensor/gps'
+          mqtt_topic: 'mqtt_client/follower1/sensor/gps'
         core/heading:
-          mqtt_topic: 'mqtt_client/follower/sensor/heading'
+          mqtt_topic: 'mqtt_client/follower1/sensor/heading'
         core/battery0:
-          mqtt_topic: 'mqtt_client/follower/sensor/battery0'
+          mqtt_topic: 'mqtt_client/follower1/sensor/battery0'
         core/temperature:
-          mqtt_topic: 'mqtt_client/follower/sensor/temperature'
+          mqtt_topic: 'mqtt_client/follower1/sensor/temperature'
         core/is_armed:
-          mqtt_topic: 'mqtt_client/follower/sensor/is_armed'
+          mqtt_topic: 'mqtt_client/follower1/sensor/is_armed'
         core/flight_mode:
-          mqtt_topic: 'mqtt_client/follower/sensor/flight_mode'
+          mqtt_topic: 'mqtt_client/follower1/sensor/flight_mode'
         control/throttle:
-          mqtt_topic: 'mqtt_client/follower/control/throttle'
+          mqtt_topic: 'mqtt_client/follower1/control/throttle'
         control/steering:
-          mqtt_topic: 'mqtt_client/follower/control/steering'
+          mqtt_topic: 'mqtt_client/follower1/control/steering'
+        ukf/state:
+          mqtt_topic: 'mqtt_client/follower1/ukf/state'
         ukf/offset_position_x:
-          mqtt_topic: 'mqtt_client/follower/ukf/offset_position_x'
+          mqtt_topic: 'mqtt_client/follower1/ukf/offset_position_x'
         ukf/offset_position_y:
-          mqtt_topic: 'mqtt_client/follower/ukf/offset_position_y'
+          mqtt_topic: 'mqtt_client/follower1/ukf/offset_position_y'
         gps/offset_position_x:
-          mqtt_topic: 'mqtt_client/follower/gps/offset_position_x'
+          mqtt_topic: 'mqtt_client/follower1/gps/offset_position_x'
         gps/offset_position_y:
-          mqtt_topic: 'mqtt_client/follower/gps/offset_position_y'
+          mqtt_topic: 'mqtt_client/follower1/gps/offset_position_y'
