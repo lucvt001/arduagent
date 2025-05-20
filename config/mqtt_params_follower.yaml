@@ -30,6 +30,7 @@
           - 'core/flight_mode'
           - 'control/throttle'
           - 'control/steering'
+          - 'ukf/state'
           - 'ukf/offset_position_x'
           - 'ukf/offset_position_y'
           - 'gps/offset_position_x'
@@ -50,6 +51,8 @@
           mqtt_topic: 'mqtt_client/follower/control/throttle'
         control/steering:
           mqtt_topic: 'mqtt_client/follower/control/steering'
+        ukf/state:
+          mqtt_topic: 'mqtt_client/follower/ukf/state'
         ukf/offset_position_x:
           mqtt_topic: 'mqtt_client/follower/ukf/offset_position_x'
         ukf/offset_position_y:
