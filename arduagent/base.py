@@ -132,7 +132,7 @@ class ArduBase(Node):
             y_acc = - update['yacc']*mG
             z_acc = - update['zacc']*mG
             acc_with_gravity = np.array([x_acc, y_acc, z_acc])
-            r = R.from_quat(self.orientation, scalar_first=True)
+            r = R.from_quat([self.orientation[1], self.orientation[2], self.orientation[3], self.orientation[0]])   # xyzw
             g_body = r.inv().apply(g_world)
             acc = acc_with_gravity - g_body
 
