@@ -127,6 +127,8 @@ class ArduBase(Node):
             self.local_velocity = [update['vx'], -update['vy'], -update['vz']]
             self.is_local_pose_updated = True
         elif update["mavpackettype"] == "SCALED_IMU2":
+            if self.orientation is None:
+                return
             # Convert from NED to FLU frame
             x_acc = update['xacc']*mG
             y_acc = - update['yacc']*mG
